@@ -166,6 +166,52 @@ async function sendToDiscord(text) {
   });
 }
 
+async function sendToSlack(text) {
+  if (!process.env.SLACK_WEBHOOK_URL) {
+    console.log('⚠️  Slack設定がありません。スキップします。');
+    return;
+  }
+
+  console.log('📤 Slackに送信中...');
+  
+  const url = process.env.SLACK_WEBHOOK_URL;
+  const data = JSON.stringify({
+    text: text,
+    username: 'Daily News Bot',
+    icon_emoji: ':newspaper:'
+  });
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          console.log('✅ Slack送信完了');
+          resolve(body);
+        } else {
+          console.error('❌ Slack送信失敗:', body);
+          reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      console.error('❌ Slack送信エラー:', error.message);
+      reject(error);
+    });
+    
+    req.write(data);
+    req.end();
+  });
+}
+
 async function main() {
   console.log('🚀 Daily News Bot 起動');
   console.log('📅 日付:', getJapanDate());
@@ -193,11 +239,16 @@ async function main() {
       sendPromises.push(sendToDiscord(news));
     }
 
+    // ★ Slack送信を追加
+    if (process.env.SLACK_WEBHOOK_URL) {
+      sendPromises.push(sendToSlack(news));
+    }
+
     if (sendPromises.length > 0) {
       await Promise.all(sendPromises);
     } else {
       console.log('⚠️  通知先が設定されていません');
-      console.log('💡 Telegram または Discord の設定を追加してください');
+      console.log('💡 Telegram、Discord、または Slack の設定を追加してください');
     }
 
     console.log('');
