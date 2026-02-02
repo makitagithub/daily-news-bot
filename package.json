@@ -1,0 +1,16 @@
+{
+  "name": "daily-news-bot",
+  "version": "1.0.0",
+  "description": "Daily news briefing bot using Claude AI",
+  "main": "scripts/fetch-news.js",
+  "scripts": {
+    "start": "node scripts/fetch-news.js",
+    "test": "node scripts/test-news.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
